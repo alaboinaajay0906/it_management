@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <header>
+        <img src="{{ url_for('static', filename='images/logoRM1.png') }}" alt="Logo" height="50">
+        <h1>RMES IT Dashboard</h1>
+        
+        {% if current_user.is_authenticated %}
+            <nav>
+                <a href="{{ url_for('main.dashboard') }}" class="btn-header">Dashboard</a>
+                <a href="{{ url_for('main.logout') }}" class="btn-header">Logout</a>
+            </nav>
+        {% endif %}
+    </header>
+
+    <main>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+  });
+</script>
+

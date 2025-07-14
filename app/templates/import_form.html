@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}Import Servers{% endblock %}
+
+{% block content %}
+<style>
+    .import-container {
+        max-width: 600px;
+        margin: auto;
+        background-color: #f8f9fa;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .import-container h2 {
+        font-weight: 600;
+    }
+
+    .import-container .btn {
+        min-width: 160px;
+    }
+
+    .import-container .form-control:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+
+    .logo-img {
+        width: 80px;
+        height: auto;
+        margin-bottom: 20px;
+    }
+</style>
+
+<div class="container py-5">
+    <div class="import-container bg-light">
+        <div class="text-center">
+            <!-- Replace with your actual logo path -->
+            <h2 class="mb-4">
+                <i class="fas fa-file-upload text-success me-2"></i>Import Server List
+            </h2>
+        </div>
+        <form action="{{ url_for('main.import_servers') }}" method="POST" enctype="multipart/form-data">
+            <div class="mb-3">
+                <label for="excel_file" class="form-label fw-bold">
+                    <i class="fas fa-file-excel me-2 text-primary"></i>Select Excel File (.xlsx)
+                </label>
+                <input type="file" class="form-control" id="excel_file" name="file" accept=".xlsx" required>
+            </div>
+
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-success">
+                    <i class="fas fa-upload me-1"></i> Upload & Import
+                </button>
+            </div>
+        </form>
+
+        <div class="mt-4 text-center">
+            <p class="mb-1 fw-bold">Need help formatting your Excel file?</p>
+            <a href="{{ url_for('static', filename='server_import.xlsx') }}" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-download me-1"></i> Download Sample Excel
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

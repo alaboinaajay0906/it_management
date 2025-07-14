@@ -1,0 +1,4 @@
+body { font-family: Arial; padding: 20px; }
+header { display: flex; align-items: center; justify-content: space-between; }
+.flash { padding: 10px; margin-bottom: 10px; }
+.flash.danger { background-color: #fdd; }

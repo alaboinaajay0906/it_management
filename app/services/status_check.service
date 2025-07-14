@@ -1,0 +1,13 @@
+[Unit]
+Description=IT Dashboard network status check
+After=network.target
+
+[Service]
+User=stark69
+WorkingDirectory=/home/stark69/it_dashboard/
+ExecStart=/usr/bin/python3 /home/stark69/it_dashboard/status_check.py
+Restart=always
+Environment=FLASK_ENV=production
+
+[Install]
+WantedBy=multi-user.target
