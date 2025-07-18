@@ -153,15 +153,39 @@
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- Status Field -->
+                        <!-- Status Field (SelectField) -->
+                        <div class="col-md-6">
+                            <div class="form-floating">
+                                {{ form.status(class="form-control", id="statusInput", placeholder=" ") }}
+                                <label for="statusInput">
+                                    <i class="fas fa-heartbeat me-2 text-danger"></i>{{ form.status.label.text }}
+                                </label>
+                            </div>
+                        </div>
+                        <!-- Department Field (SelectField) -->
                         <div class="mb-4">
                             <label class="form-label">
-                                <i class="fas fa-heartbeat me-2 text-danger"></i>{{ form.status.label.text }}
+                                <i class="fas fa-building me-2 text-primary"></i>{{ form.department.label.text }}
                             </label>
-                            {{ form.status(class="form-select status-select py-3") }}
+                            {{ form.department(class="form-select py-3") }}
                         </div>
-                        
+
+                        <!-- purpse Field (SelectField) -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-stethoscope me-2 text-info"></i>{{ form.purpose.label.text }}
+                            </label>
+                            {{ form.purpose(class="form-select py-3") }}
+                        </div>
+
+                        <!-- Primary Email ID Field (StringField) -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-envelope me-2 text-warning"></i>{{ form.email_id_prim.label.text }}
+                            </label>
+                            {{ form.email_id_prim(class="form-control py-3", placeholder="Enter primary email ID") }}
+                        </div>                
+
                         <!-- Notes Field -->
                         <div class="mb-4">
                             <label class="form-label">

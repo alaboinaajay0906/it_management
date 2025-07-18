@@ -66,10 +66,65 @@ from collections import Counter
 # Server count and health
 @main.route('/')
 @main.route('/dashboard')
-def dashboard():
-    servers = Server.query.all()
-    total_servers = len(servers)
+# def dashboard():
+#     servers = Server.query.all()
+#     total_servers = len(servers)
     
+#     if not servers:
+#         return render_template('dashboard.html',
+#             servers=[],
+#             total_servers=0,
+#             up_servers=0,
+#             maintenance_servers=0,
+#             down_servers=0,
+#             health_status="No Data",
+#             health_color="#4895ef",
+#             health_percentage=0
+#         )
+
+#     status_counts = Counter(s.status for s in servers)
+#     up_servers = status_counts.get('Up', 0)
+#     maintenance_servers = status_counts.get('Maintenance', 0)
+#     down_servers = status_counts.get('Down', 0)
+
+#     try:
+#         health_percentage = (up_servers / total_servers) * 100
+#     except ZeroDivisionError:
+#         health_percentage = 0
+
+#     if health_percentage >= 90:
+#         health_status = "Excellent"
+#         health_color = "green"
+#     elif health_percentage >= 75:
+#         health_status = "Good"
+#         health_color = "#2a9d8f"
+#     elif health_percentage >= 50:
+#         health_status = "Fair"
+#         health_color = "#f8961e"
+#     else:
+#         health_status = "Critical"
+#         health_color = "#f94144"
+
+#     return render_template('dashboard.html',
+#         servers=servers,
+#         total_servers=total_servers,
+#         up_servers=up_servers,
+#         maintenance_servers=maintenance_servers,
+#         down_servers=down_servers,
+#         health_percentage=health_percentage,
+#         health_status=health_status,
+#         health_color=health_color
+#     )
+def dashboard():
+    ip_filter = request.args.get('ip', '').strip()
+
+    if ip_filter:
+        servers = Server.query.filter(Server.ip_address.like(f"%{ip_filter}%")).all()
+    else:
+        servers = Server.query.all()
+
+    total_servers = len(servers)
+
     if not servers:
         return render_template('dashboard.html',
             servers=[],
@@ -79,7 +134,8 @@ def dashboard():
             down_servers=0,
             health_status="No Data",
             health_color="#4895ef",
-            health_percentage=0
+            health_percentage=0,
+            ip_filter=ip_filter
         )
 
     status_counts = Counter(s.status for s in servers)
@@ -113,7 +169,8 @@ def dashboard():
         down_servers=down_servers,
         health_percentage=health_percentage,
         health_status=health_status,
-        health_color=health_color
+        health_color=health_color,
+        ip_filter=ip_filter
     )
 # Add server
 @main.route('/add-server', methods=['GET', 'POST'])
@@ -128,9 +185,12 @@ def add_server():
             os=form.os.data,
             ip_address=form.ip_address.data,
             owner=form.owner.data,
-            #status=form.status.data,
+            status=form.status.data,
             specifications=form.specifications.data,
-            notes=form.notes.data
+            notes=form.notes.data,
+            department=form.department.data,
+            email_id_prim=form.email_id_prim.data,
+            purpose=form.purpose.data
         )
         db.session.add(server)
         db.session.commit()

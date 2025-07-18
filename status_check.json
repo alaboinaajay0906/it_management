@@ -1,0 +1,17 @@
+{
+  "default": {
+    "status": true,
+    "storage": true
+  },
+  "RM": {
+    "port80": true,
+    "port5432": true,
+    "port22": true,
+    "port443": false
+    
+  },
+  "Jenkins": {
+    "port8080": true
+    
+  }
+}
