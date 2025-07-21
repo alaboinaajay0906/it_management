@@ -57,6 +57,20 @@
     }
 </style>
 
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+
 <div class="container py-5">
     <div class="row justify-content-center">
         <div class="col-lg-8">
@@ -82,22 +96,44 @@
 
                         {{ form.hidden_tag() }}
                         
-                      <!-- Existing Name & OS Row -->
+<!-- Existing Name, Machine Password, and OS Row -->
 <div class="row g-3 mb-4">
-    <div class="col-md-6">
+    <!-- Machine Name -->
+    <div class="col-md-4">
         <div class="form-floating">
             {{ form.name(class="form-control", id="nameInput", placeholder=" ") }}
             <label for="nameInput" class="form-label">
                 <i class="fas fa-tag me-2 text-primary"></i>{{ form.name.label.text }}
             </label>
+            {% if form.name.errors %}
+                <small class="text-danger">{{ form.name.errors[0] }}</small>
+            {% endif %}
         </div>
     </div>
-    <div class="col-md-6">
+
+    <!-- Machine Password -->
+    <div class="col-md-4">
         <div class="form-floating">
-            {{ form.os(class="form-select", id="osSelect") }}
+            {{ form.machine_psw(class="form-control", id="machinePasswordInput", placeholder=" ") }}
+            <label for="machinePasswordInput" class="form-label">
+                <i class="fas fa-key me-2 text-warning"></i>{{ form.machine_psw.label.text }}
+            </label>
+            {% if form.machine_psw.errors %}
+                <small class="text-danger">{{ form.machine_psw.errors[0] }}</small>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Operating System -->
+    <div class="col-md-4">
+        <div class="form-floating">
+            {{ form.os(class="form-select", id="osSelect", placeholder=" ") }}
             <label for="osSelect" class="form-label">
                 <i class="fab fa-windows me-2 text-info"></i>{{ form.os.label.text }}
             </label>
+            {% if form.os.errors %}
+                <small class="text-danger">{{ form.os.errors[0] }}</small>
+            {% endif %}
         </div>
     </div>
 </div>

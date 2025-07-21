@@ -1,17 +1,24 @@
 {
   "default": {
-    "status": true,
-    "storage": true
+    "storage": true,
+    "ram": false
   },
-  "RM": {
-    "port80": true,
-    "port5432": true,
-    "port22": true,
-    "port443": false
-    
+  "RMEYE": {
+    "ports": {
+      "80": true,
+      "5432": true,
+      "22": true,
+      "443": false
+    }
   },
   "Jenkins": {
-    "port8080": true
-    
+    "ports": {
+      "8080": true
+    }
+  },
+  "VMhost": {
+    "ports": {
+      "9090": false
+    }
   }
 }

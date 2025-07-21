@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, redirect, url_for, request, Response, g, abort, flash, current_app
-from .models import Server
+from .models import Server, HealthCheck
 from .forms import ServerForm
 from . import db
 from functools import wraps
@@ -177,24 +177,45 @@ def dashboard():
 @basic_auth_required
 def add_server():
     form = ServerForm()
+
     if form.validate_on_submit():
-        server = Server(
-            machine_id=form.machine_id.data,
-            machine_code=form.machine_code.data,
-            name=form.name.data,
-            os=form.os.data,
-            ip_address=form.ip_address.data,
-            owner=form.owner.data,
-            status=form.status.data,
-            specifications=form.specifications.data,
-            notes=form.notes.data,
-            department=form.department.data,
-            email_id_prim=form.email_id_prim.data,
-            purpose=form.purpose.data
-        )
-        db.session.add(server)
-        db.session.commit()
-        return redirect(url_for('main.dashboard'))
+        try:
+            # Create new server object from form
+            server = Server(
+                machine_id=form.machine_id.data,
+                machine_code=form.machine_code.data,
+                name=form.name.data,
+                os=form.os.data,
+                ip_address=form.ip_address.data,
+                owner=form.owner.data,
+                status=form.status.data,
+                specifications=form.specifications.data,
+                notes=form.notes.data,
+                department=form.department.data,
+                email_id_prim=form.email_id_prim.data,
+                purpose=form.purpose.data,
+                machine_psw=form.machine_psw.data,
+            )
+
+            db.session.add(server)
+            db.session.commit()
+
+            # Create related health_check record (add defaults if needed)
+            health = HealthCheck(server_id=server.id)
+            db.session.add(health)
+            db.session.commit()
+
+            flash("Server added successfully!", "success")
+            return redirect(url_for('main.dashboard'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f"Failed to save: {str(e)}", "danger")
+
+    elif request.method == 'POST':
+        flash("Form validation failed. Please correct the errors below.", "warning")
+        print("Form errors:", form.errors)
+
     return render_template('server_form.html', form=form)
 
 #edit button

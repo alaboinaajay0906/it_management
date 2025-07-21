@@ -17,9 +17,9 @@ class Server(db.Model):
     machine_psw = db.Column(db.String(20))    
 
     # Optional relationship to health_check
-    health = db.relationship('health_check', backref='server', uselist=False, cascade="all, delete-orphan")
+    health = db.relationship('HealthCheck', backref='server', uselist=False, cascade="all, delete-orphan")
 
-class health_check(db.Model):
+class HealthCheck(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     server_id = db.Column(db.Integer, db.ForeignKey('server.id'), nullable=False)
     port_22 = db.Column(db.String(10), default='Unknown')
