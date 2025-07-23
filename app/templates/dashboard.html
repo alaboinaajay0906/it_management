@@ -271,6 +271,22 @@
 .border-danger { border-color: #f94144 !important; }
 .border-warning { border-color: #f8961e !important; }
 .border-success { border-color: #4ad66d !important; }
+/* FOr storage icon*/
+  .badge {
+    padding: 5px 10px;
+    border-radius: 0.5em;
+    font-weight: 500;
+  }
+.detail-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.detail-row .text-muted {
+    white-space: nowrap;
+}
+
 
 /* New code */
 </style>
@@ -387,6 +403,28 @@
                     <h5 class="mb-0">
                         <i class="fas fa-tag me-1"></i>{{ server.name or 'Unnamed Machine' }}
                     </h5>
+    <!-- {# STORAGE BADGE/ICON BASED ON USAGE #} -->
+{% set storage_value = health_map[server.id].storage if server.id in health_map else None %}
+{% if storage_value is not none %}
+    {% if storage_value > 80 %}
+        <span class="badge bg-danger">
+            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+        </span>
+    {% elif storage_value > 50 %}
+        <span class="badge bg-warning text-dark">
+            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+        </span>
+    {% else %}
+        <span class="badge bg-success">
+            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+        </span>
+    {% endif %}
+{% else %}
+    <span class="badge bg-secondary">
+        <i class="fas fa-hdd"></i> Storage: N/A
+    </span>
+{% endif %}
+
                     <span class="badge status-badge 
                         {% if server.status == 'Up' %}up
                         {% elif server.status == 'Maintenance' %}maintenance
@@ -400,17 +438,27 @@
                         {{ server.status }}
                     </span>
                 </div>
-                
+                <!-- card for each server -->
                 <div class="card-body">
                     <div class="machine-details">
+            <!-- {# Show last_checked#} -->
+                        <div class="detail-row">
+                            {% set last_checked = health_map[server.id].last_checked if server.id in health_map else None %}
+                            
+                            <span class="detail-label"><i class="fas fa-clock me-1"></i>Last Checked:</span>
+                            <span class="detail-value">
+                                {% if last_checked %}
+                                    {{ last_checked }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </span>
+                        </div>
                         <div class="detail-row">
                             <span class="detail-label"><i class="fas fa-id-card me-1"></i>ID:</span>
                             <span class="detail-value">{{ server.machine_id or '-' }}</span>
                         </div>
-                        <div class="detail-row">
-                            <span class="detail-label"><i class="fas fa-barcode me-1"></i>Code:</span>
-                            <span class="detail-value">{{ server.machine_code or '-' }}</span>
-                        </div>
+                        
                         <div class="detail-row">
                             <span class="detail-label"><i class="fas fa-desktop me-1"></i>OS:</span>
                             <span class="detail-value">{{ server.os or '-' }}</span>
@@ -438,11 +486,10 @@
     data-bs-html="true"
     data-bs-trigger="hover"
     data-bs-placement="top"
-    title="Health check for: {{ server.purpose }}"
+    title="Service for: {{ server.purpose }}"
     data-bs-content="
         <div style='text-align: left;'>
             <strong>Deparment:</strong> {{ server.department }}<br>
-            <strong>Disk Space:</strong> {{ health_check.storage }}<br>
             <strong>Notify to:</strong> {{ server.email_id_prim }}<br>
             <strong>Notes:</strong> {{ server.notes or '-' }}
         </div>">

@@ -16,6 +16,7 @@ import getpass
 from sqlfluff import lint, fix
 from colorama import init, Fore, Back, Style
 from datetime import datetime
+import pytz
 
 # Authentication configuration
 VALID_USERNAME = 'itadmin'
@@ -63,58 +64,21 @@ def load_user():
 def inject_user():
     return dict(current_user=g.get('current_user', BasicAuthUser(None)))
 from collections import Counter
+
+# UTC to IST conversion
+def utc_to_ist(utc_dt):
+    if utc_dt is None:
+        return None
+    ist = pytz.timezone('Asia/Kolkata')
+    if utc_dt.tzinfo is None:
+        utc_dt = pytz.utc.localize(utc_dt)
+    return utc_dt.astimezone(ist).strftime('%Y-%m-%d %H:%M:%S')
+
 # Server count and health
 @main.route('/')
 @main.route('/dashboard')
-# def dashboard():
-#     servers = Server.query.all()
-#     total_servers = len(servers)
-    
-#     if not servers:
-#         return render_template('dashboard.html',
-#             servers=[],
-#             total_servers=0,
-#             up_servers=0,
-#             maintenance_servers=0,
-#             down_servers=0,
-#             health_status="No Data",
-#             health_color="#4895ef",
-#             health_percentage=0
-#         )
 
-#     status_counts = Counter(s.status for s in servers)
-#     up_servers = status_counts.get('Up', 0)
-#     maintenance_servers = status_counts.get('Maintenance', 0)
-#     down_servers = status_counts.get('Down', 0)
-
-#     try:
-#         health_percentage = (up_servers / total_servers) * 100
-#     except ZeroDivisionError:
-#         health_percentage = 0
-
-#     if health_percentage >= 90:
-#         health_status = "Excellent"
-#         health_color = "green"
-#     elif health_percentage >= 75:
-#         health_status = "Good"
-#         health_color = "#2a9d8f"
-#     elif health_percentage >= 50:
-#         health_status = "Fair"
-#         health_color = "#f8961e"
-#     else:
-#         health_status = "Critical"
-#         health_color = "#f94144"
-
-#     return render_template('dashboard.html',
-#         servers=servers,
-#         total_servers=total_servers,
-#         up_servers=up_servers,
-#         maintenance_servers=maintenance_servers,
-#         down_servers=down_servers,
-#         health_percentage=health_percentage,
-#         health_status=health_status,
-#         health_color=health_color
-#     )
+# dash oard routing
 def dashboard():
     ip_filter = request.args.get('ip', '').strip()
 
@@ -160,7 +124,16 @@ def dashboard():
     else:
         health_status = "Critical"
         health_color = "#f94144"
+        
+    # Get all health_check rows and map by server_id
+    health_data = HealthCheck.query.all()
+    # Convert last_checked datetime from UTC to IST for each object
+    for h in health_data:
+        h.last_checked = utc_to_ist(h.last_checked)
+    # Create a mapping of server_id to health_check object
+    health_map = {h.server_id: h for h in health_data}
 
+    # Pass all required variables into templates to .html ( visible on web page )
     return render_template('dashboard.html',
         servers=servers,
         total_servers=total_servers,
@@ -170,8 +143,10 @@ def dashboard():
         health_percentage=health_percentage,
         health_status=health_status,
         health_color=health_color,
-        ip_filter=ip_filter
+        ip_filter=ip_filter,
+        health_map=health_map,
     )
+
 # Add server
 @main.route('/add-server', methods=['GET', 'POST'])
 @basic_auth_required

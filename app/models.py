@@ -11,7 +11,7 @@ class Server(db.Model):
     specifications = db.Column(db.Text)
     notes = db.Column(db.Text)
     department = db.Column(db.String(240))
-    email_id_prim = db.Column(db.String(120))
+    email_id_prim = db.Column(db.String(240))
     purpose = db.Column(db.String(240))  # This acts as 'service' (e.g., 'RM', 'Jenkins')
     status = db.Column(db.String(20)) # 'Up' or 'Down'
     machine_psw = db.Column(db.String(20))    
@@ -26,5 +26,7 @@ class HealthCheck(db.Model):
     port_80 = db.Column(db.String(10), default='Unknown')
     port_8080 = db.Column(db.String(10), default='Unknown')
     port_5432 = db.Column(db.String(10), default='Unknown')
-    storage = db.Column(db.String(10))
+    storage = db.Column(db.Integer)
     last_checked = db.Column(db.DateTime)
+    last_alert_sent = db.Column(db.DateTime, nullable=True)
+    healthcheck = db.Column(db.String(100))
