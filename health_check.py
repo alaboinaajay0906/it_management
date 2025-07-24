@@ -31,17 +31,13 @@ def check_linux_storage(ip, username, password):
 
 # function to check windows storage 
 def check_windows_storage(ip, username, password):
-    """
-    Connects to a remote Windows machine via WMI and checks storage usage of C: drive.
-
+    """Connects to a remote Windows machine via WMI and checks storage usage of C: drive.
     Args:
         ip (str): IP address of the target machine.
         username (str): Username (can be in 'ip\\user' or 'domain\\user' format).
         password (str): Password for the user.
-
     Returns:
-        int: Percentage of used space on C: drive, or None if connection fails.
-    """
+        int: Percentage of used space on C: drive, or None if connection fails."""
     try:
             conn = wmi.WMI(computer=ip, user=username, password=password)
             for disk in conn.Win32_LogicalDisk(DriveType=3):  # DriveType=3 = local disk
@@ -59,7 +55,7 @@ def check_windows_storage(ip, username, password):
             print(f"[ERROR] Could not connect to {ip}: {e}")
             return None
 
-# health check
+# health check & update in DB
 def run_health_check():
     config = load_config()
     if not config.get("storage"):
@@ -90,12 +86,17 @@ def run_health_check():
             hc = HealthCheck(server_id=server.id)
             db.session.add(hc)
         hc.storage = storage_info
-    try:
-        db.session.commit()
-        print(f"[SUCCESS] Updated storage for {server.name}: {storage_info}%")
-    except Exception as e:
-        db.session.rollback()
-        print(f"[DB ERROR] Failed to update storage for {server.name}: {e}")
+        
+        # Ensure storage_info is numeric &commit in DB
+        if isinstance(storage_info, (int, float)) or (isinstance(storage_info, str) and storage_info.isdigit()):
+            try:
+                db.session.commit()
+                print(f"[SUCCESS] Updated storage for {server.name}: {storage_info}%")
+            except Exception as e:
+                db.session.rollback()
+                print(f"[DB ERROR] Failed to update storage for {server.name}: {e}")
+        else:
+            print(f"[SKIP] Storage info for {server.name} is not numeric/error value: {storage_info}")
 
 if __name__ == "__main__":
     run_health_check()
@@ -104,14 +105,9 @@ if __name__ == "__main__":
 # NOTES:
 '''What Actually Returns the Storage Data?
 The WMI (Windows Management Instrumentation) service is responsible for accessing system data — like storage usage, CPU, memory, etc.
-
 Internally, WMI uses DCOM (Distributed COM) over RPC.
-
 After the initial handshake on 135, the actual data request is routed to a dynamic TCP port (from the range 49152–65535 by default) assigned to the DCOM service handling the WMI request.
-
 Example:
 Your Python wmi.WMI() call → connects to target 192.168.60.122 on port 135.
-
 RPC Endpoint Mapper says: “For WMI, talk to me on port 52834.”
-
 Your client then connects to 52834, authenticates, and fetches Win32_LogicalDisk info.'''

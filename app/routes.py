@@ -147,6 +147,15 @@ def dashboard():
         health_map=health_map,
     )
 
+# snooze alerts
+@main.route('/toggle_snooze/<int:server_id>', methods=['POST'])
+def toggle_snooze(server_id):
+    health = HealthCheck.query.filter_by(server_id=server_id).first()
+    if health:
+        health.ack = 'ack' in request.form  # True if checkbox is checked, False if not
+        db.session.commit()
+    return redirect(url_for('main.dashboard'))
+
 # Add server
 @main.route('/add-server', methods=['GET', 'POST'])
 @basic_auth_required

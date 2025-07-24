@@ -30,3 +30,5 @@ class HealthCheck(db.Model):
     last_checked = db.Column(db.DateTime)
     last_alert_sent = db.Column(db.DateTime, nullable=True)
     healthcheck = db.Column(db.String(100))
+    ack = db.Column(db.Boolean, default=False)
+

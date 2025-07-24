@@ -1,0 +1,1 @@
+python -m pip freeze > global_requirements.txt; & "\venv\Scripts\activate.bat"; pip install -r global_requirements.txt

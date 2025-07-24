@@ -43,22 +43,28 @@ def get_valid_emails(email_str):
 def check_and_notify():
     servers = Server.query.all()
     for server in servers:
+        
         health = HealthCheck.query.filter_by(server_id=server.id).first()
         
         if not health:
             continue  # No health data
 
-        if health.healthcheck == 'Healthy':
-            print(f"{server.name} healthy! Notification Alert not required.")
-            continue
+        # if health.healthcheck == 'Healthy':
+        #     # print(f"{server.name} healthy! Notification Alert not required.")
+        #     continue
 
         alert_needed = (
             server.status == 'Down' or
             any(getattr(health, port) == 'Closed' for port in ['port_22', 'port_80', 'port_8080', 'port_5432']) or
-            (health.storage and health.storage > 90)
+            (health.storage and health.storage > 85)
         )
 
         if alert_needed and server.email_id_prim:
+            if health.ack:
+                print(f"[INFO] Email notifications for {server.email_id_prim} are currently snoozed. "
+      "Click on 'UNSNOOZE' in dashboard to resume receiving notifications.")
+                continue
+
             issue_lines = []
 
             if server.status == 'Down':
@@ -75,12 +81,12 @@ def check_and_notify():
                 if getattr(health, port_key) == 'Closed':
                     issue_lines.append(f"Port {label}: CLOSED")
 
-            if health.storage and int(health.storage) > '90':
+            if health.storage and int(health.storage) > 85:
                 issue_lines.append(f"Storage Usage: {health.storage}% (HIGH)")
 
             #  Cooldown logic
             if not health.last_alert_sent or now_utc - health.last_alert_sent.replace(tzinfo=timezone.utc) > alert_cooldown:
-                subject = f"🚨 Alert: Issue on {server.name} ({server.ip_address})"
+                subject = f"🚨 Alert: Issue on {server.name} machine"
                 body = f"""
                 <html>
                 <body style="font-family:Segoe UI, sans-serif; background-color:#f9f9f9; padding:20px;">
@@ -92,13 +98,19 @@ def check_and_notify():
                         <table style="width:100%; border-collapse:collapse; margin-top:10px;">
                             <thead>
                                 <tr>
-                                    <th style="text-align:left; padding:8px; border-bottom:2px solid #ddd;">Parameter</th>
-                                    <th style="text-align:left; padding:8px; border-bottom:2px solid #ddd;">Status</th>
+                                <th style="text-align:left; padding:8px 4px; border-bottom:2px solid #ddd;">Parameter</th>
+                                <th style="text-align:left; padding:8px 4px; border-bottom:2px solid #ddd; white-space:nowrap;">Status</th>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {''.join(f"<tr><td style='padding:8px; border-bottom:1px solid #eee;'>{line.split(':')[0]}</td><td style='padding:8px; color:#d9534f; font-weight:bold; border-bottom:1px solid #eee;'>{line.split(':')[1].strip()}</td></tr>" for line in issue_lines)}
-                            </tbody>
+                                </thead>
+                                <tbody>
+                                    {''.join(
+                                        f"<tr>"
+                                        f"<td style='padding:8px 4px; border-bottom:1px solid #eee;'>{line.split(':')[0]}</td>"
+                                        f"<td style='padding:8px 4px; color:#d9534f; font-weight:bold; border-bottom:1px solid #eee;'>{line.split(':')[1].strip()}</td>"
+                                        f"</tr>"
+                                        for line in issue_lines
+                                    )}
+                                </tbody>
                         </table>
                         <p style="margin-top:20px;">Please investigate and resolve the above issue(s) at the earliest convenience.</p>
                         <p style="margin-top:30px;">Regards,<br><strong>RMES IT Management System</strong></p>
@@ -106,20 +118,24 @@ def check_and_notify():
                 </body>
                 </html>
                 """
-
                 try:
                     recipients = get_valid_emails(server.email_id_prim)
                     msg = Message(subject, recipients=recipients, body=body)
                     msg.html = body
                     mail.send(msg)
+                    health.healthcheck = 'Faulty'
                     health.last_alert_sent = now_utc
                     db.session.commit()
-                    print(f"Email sent to {server.email_id_prim}")
+                    print(f"Server {server.name} found unhealthy! Email sent to {server.email_id_prim}")
                 except Exception as e:
                     print(f"Failed to send email to {server.email_id_prim}: {e}")
             else:
                 print(f"[INFO] Email already sent recently to {server.email_id_prim}, skipping...")
-
+        else:
+            health.healthcheck = 'Healthy'
+            db.session.commit()
+            print(f"\033[92m[INFO] Server {server.name}  is Healthy!\033[0m")
+            
 
 # --- Scheduler ---
 if __name__ == "__main__":

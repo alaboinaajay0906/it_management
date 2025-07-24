@@ -288,6 +288,38 @@
 }
 
 
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 20px;
+}
+.switch input { display: none; }
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 20px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px; width: 16px;
+  left: 2px; bottom: 2px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #2196F3;
+}
+input:checked + .slider:before {
+  transform: translateX(20px);
+}
+
+
 /* New code */
 </style>
 
@@ -480,22 +512,45 @@
                 
                 <div class="card-footer bg-transparent">
                     <div class="d-flex justify-content-between align-items-center">
- <!-- updated i info button  -->
-<button type="button" class="btn btn-sm btn-outline-info"
-    data-bs-toggle="popover"
-    data-bs-html="true"
-    data-bs-trigger="hover"
-    data-bs-placement="top"
-    title="Service for: {{ server.purpose }}"
-    data-bs-content="
-        <div style='text-align: left;'>
-            <strong>Deparment:</strong> {{ server.department }}<br>
-            <strong>Notify to:</strong> {{ server.email_id_prim }}<br>
-            <strong>Notes:</strong> {{ server.notes or '-' }}
-        </div>">
-    <i class="fas fa-info-circle"></i> Additional info
-</button>
+                        <!-- updated i info button  -->
+                        <button type="button" class="btn btn-sm btn-outline-info"
+                            data-bs-toggle="popover"
+                            data-bs-html="true"
+                            data-bs-trigger="hover"
+                            data-bs-placement="top"
+                            title="Service for: {{ server.purpose }}"
+                            data-bs-content="
+                                <div style='text-align: left;'>
+                                    <strong>Deparment:</strong> {{ server.department }}<br>
+                                    <strong>Notify to:</strong> {{ server.email_id_prim }}<br>
+                                    <strong>Notes:</strong> {{ server.notes or '-' }}
+                                </div>">
+                            <i class="fas fa-info-circle"></i> Additional info
+                        </button>
 
+                    <!-- Snooze button with alarm icon -->
+                    {% set health = health_map[server.id] if server.id in health_map else None %}
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-top: 5px;">
+                        
+                        <!-- Alarm Icon -->
+                        <i class="fa-solid fa-bell{{ '-slash' if health and health.ack else '' }}"
+                        style="font-size: 20px; color: {{ 'gray' if health and health.ack else 'red' }};"
+                        title="{{ 'Snoozed' if health and health.ack else 'Active Alerts' }}">
+                        </i>
+                        
+                        <!-- Toggle Switch + Label -->
+                        <form method="POST" action="{{ url_for('main.toggle_snooze', server_id=server.id) }}" style="display: flex; align-items: center; gap: 8px;">
+                            <label class="switch" style="margin: 0;">
+                                <input type="checkbox" name="ack" value="true" onchange="this.form.submit()" {{ 'checked' if health and health.ack }}>
+                                <span class="slider round"></span>
+                            </label>
+                            <span class="toggle-label" style="font-size: 12px; font-weight: bold;">
+                                {{ 'Snoozed' if health and health.ack else 'Active' }}
+                            </span>
+                        </form>
+                    </div>
+
+                        <!-- edit button -->
                         <div class="action-buttons">
                             <a href="{{ url_for('main.edit_server', id=server.id) }}" class="btn btn-sm btn-outline-warning">
                                 <i class="fas fa-edit"></i>
