@@ -5,7 +5,6 @@ from . import db
 from functools import wraps
 import re
 from werkzeug.utils import secure_filename
-import pandas as pd
 main = Blueprint('main', __name__)
 import openpyxl
 import psycopg2
@@ -17,7 +16,7 @@ from sqlfluff import lint, fix
 from colorama import init, Fore, Back, Style
 from datetime import datetime
 import pytz
-
+from .hardware_spec_est import recommend_hardware
 # Authentication configuration
 VALID_USERNAME = 'itadmin'
 VALID_PASSWORD = 'IT@2025'
@@ -148,13 +147,13 @@ def dashboard():
     )
 
 # snooze alerts
-@main.route('/toggle_snooze/<int:server_id>', methods=['POST'])
-def toggle_snooze(server_id):
-    health = HealthCheck.query.filter_by(server_id=server_id).first()
-    if health:
-        health.ack = 'ack' in request.form  # True if checkbox is checked, False if not
-        db.session.commit()
-    return redirect(url_for('main.dashboard'))
+# @main.route('/toggle_snooze/<int:server_id>', methods=['POST'])
+# def toggle_snooze(server_id):
+#     health = HealthCheck.query.filter_by(server_id=server_id).first()
+#     if health:
+#         health.ack = 'ack' in request.form  # True if checkbox is checked, False if not
+#         db.session.commit()
+#     return redirect(url_for('main.dashboard'))
 
 # Add server
 @main.route('/add-server', methods=['GET', 'POST'])
@@ -179,6 +178,8 @@ def add_server():
                 email_id_prim=form.email_id_prim.data,
                 purpose=form.purpose.data,
                 machine_psw=form.machine_psw.data,
+                notification_mode=form.notification_mode.data,
+                notify_interval=form.notify_interval.data if form.notification_mode.data == 1 else None
             )
 
             db.session.add(server)
@@ -207,12 +208,31 @@ def add_server():
 @basic_auth_required
 def edit_server(id):
     server = Server.query.get_or_404(id)
-    form = ServerForm(obj=server)
-    if form.validate_on_submit():
-        form.populate_obj(server)
-        db.session.commit()
-        return redirect(url_for('main.dashboard'))
-    return render_template('server_form.html', form=form)
+    form = ServerForm(obj=server)  # Initialize form with server data for both GET and POST
+    
+    if request.method == 'POST':
+        # Don't create a new form instance here - use the one we already created
+        if form.validate_on_submit():
+            try:
+                # Handle the notification fields before populate_obj
+                if form.notification_mode.data == 0:
+                    server.notify_interval = None
+                elif form.notification_mode.data == 1 and not form.notify_interval.data:
+                    flash("Notify interval is required when selecting 'Notify repeatedly'", "error")
+                    return render_template('server_form.html', form=form, server=server)
+                
+                # Update all fields except password if it's left blank
+                form.populate_obj(server)
+                
+                db.session.commit()
+                flash("Server details updated successfully!", "success")
+                return redirect(url_for('main.dashboard'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f"An error occurred while updating the server: {str(e)}", "error")
+    
+    # For both GET and failed POST, render the template with the form
+    return render_template('server_form.html', form=form, server=server)
 
 # delete button
 @main.route('/delete-server/<int:id>', methods=['POST'])
@@ -489,3 +509,24 @@ def get_customers():
         return customers
     except:
         return []
+    
+# hardware spec estmator
+@main.route("/hardware-estimator", methods=["GET", "POST"])
+def hardware_estimator():
+    specs = None  # Initialize specs
+    if request.method == "POST":
+        try:
+            project_scope = int(request.form.get("project_scope", 1))
+            no_of_params = int(request.form.get("no_of_params", 0))
+            poll_rate = int(request.form.get("poll_rate", 0))
+            pg_agent_job_summarisation_rate = int(request.form.get("pg_agent_job_summarisation_rate", 0))
+            users = request.form.get("users") == "yes"
+            high_traffic = request.form.get("high_traffic") == "yes"
+
+            specs = recommend_hardware(
+                project_scope, users, high_traffic, no_of_params, poll_rate, pg_agent_job_summarisation_rate
+            )
+        except Exception as e:
+            return f"Error: {e}"
+
+    return render_template("hardware_form.html", specs=specs)

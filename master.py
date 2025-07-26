@@ -25,32 +25,32 @@ def is_port_open(ip, port):
         return False
     
 # Ping function which platform independent which will work when ping is executing on both windows or linux
-def ping_host(ip, os_name=None):
-    try:
-        # Use system's actual OS if os_name is not provided
-        if not os_name:
-            os_name = platform.system()
-
-        os_clean = os_name.strip().lower()
-        param = "-n" if os_clean == "windows" else "-c"
-        command = ["ping", param, "1", ip]
-
-        result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        return result.returncode == 0
-    except Exception as e:
-        print(f"[ERROR] Ping failed for {ip}: {e}")
-        return False
-
-# # Ping function   
-# def ping_host(ip):
+# def ping_host(ip, os_name=None):
 #     try:
-#         # Linux uses '-c' to specify number of echo requests
-#         command = ["ping", "-c", "1", "-W", "2", ip]
+#         # Use system's actual OS if os_name is not provided
+#         if not os_name:
+#             os_name = platform.system()
+
+#         os_clean = os_name.strip().lower()
+#         param = "-n" if os_clean == "windows" else "-c"
+#         command = ["ping", param, "1", ip]
+
 #         result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 #         return result.returncode == 0
 #     except Exception as e:
 #         print(f"[ERROR] Ping failed for {ip}: {e}")
 #         return False
+
+# # Ping function   
+def ping_host(ip):
+    try:
+        # Linux uses '-c' to specify number of echo requests
+        command = ["/usr/bin/ping", "-c", "1", "-W", "2", ip]
+        result = subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return result.returncode == 0
+    except Exception as e:
+        print(f"[ERROR] Ping failed for {ip}: {e}")
+        return False
     
 # ping and port status update function for a single server
 def update_device_status(server):

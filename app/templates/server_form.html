@@ -112,17 +112,18 @@
     </div>
 
     <!-- Machine Password -->
-    <div class="col-md-4">
-        <div class="form-floating">
-            {{ form.machine_psw(class="form-control", id="machinePasswordInput", placeholder=" ") }}
-            <label for="machinePasswordInput" class="form-label">
-                <i class="fas fa-key me-2 text-warning"></i>{{ form.machine_psw.label.text }}
-            </label>
-            {% if form.machine_psw.errors %}
-                <small class="text-danger">{{ form.machine_psw.errors[0] }}</small>
-            {% endif %}
-        </div>
+<div class="col-md-4">
+    <div class="form-floating">
+        {{ form.machine_psw(class="form-control", id="machinePasswordInput", placeholder=" ", autocomplete="off") }}
+        <label for="machinePasswordInput" class="form-label">
+            <i class="fas fa-key me-2 text-warning"></i>{{ form.machine_psw.label.text }}
+        </label>
+        <small class="text-muted">Don't Leave blank this field</small>
+        {% if form.machine_psw.errors %}
+            <small class="text-danger">{{ form.machine_psw.errors[0] }}</small>
+        {% endif %}
     </div>
+</div>
 
     <!-- Operating System -->
     <div class="col-md-4">
@@ -220,7 +221,38 @@
                                 <i class="fas fa-envelope me-2 text-warning"></i>{{ form.email_id_prim.label.text }}
                             </label>
                             {{ form.email_id_prim(class="form-control py-3", placeholder="Enter primary email ID (you can add multiple email_id with ',')") }}
-                        </div>                
+                        </div>   
+                         <div class="form-group">
+
+<!-- Improved Notification Fields -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="form-floating">
+            <select class="form-control" id="notification_mode" name="notification_mode" required>
+                {% for value, label in form.notification_mode.choices %}
+                    <option value="{{ value }}" {% if form.notification_mode.data == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <label for="notification_mode">
+                <i class="fas fa-bell me-2 text-warning"></i>Notification Mode
+            </label>
+        </div>
+    </div>
+    <div class="col-md-6" id="notify_interval_group" style="display: {% if form.notification_mode.data == 1 %}block{% else %}none{% endif %};">
+        <div class="form-floating">
+            <input type="number" class="form-control" id="notify_interval" name="notify_interval" 
+                   value="{{ form.notify_interval.data if form.notify_interval.data }}" min="1">
+            <label for="notify_interval">
+                <i class="fas fa-clock me-2 text-info"></i>Notify Interval (min)
+            </label>
+            {% if form.notify_interval.errors %}
+                <div class="invalid-feedback" style="display: block;">
+                    {{ form.notify_interval.errors[0] }}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
 
                         <!-- Notes Field -->
                         <div class="mb-4">
@@ -246,11 +278,11 @@
     </div>
 </div>
 
+<!-- Fixed JavaScript -->
 <script>
-// Fneedsrm validation script
 document.addEventListener('DOMContentLoaded', function() {
+    // Bootstrap Form Validation
     const forms = document.querySelectorAll('.needs-validation');
-    
     Array.from(forms).forEach(form => {
         form.addEventListener('submit', event => {
             if (!form.checkValidity()) {
@@ -260,6 +292,22 @@ document.addEventListener('DOMContentLoaded', function() {
             form.classList.add('was-validated');
         }, false);
     });
+
+    // Notification Interval Toggle
+    document.getElementById('notification_mode').addEventListener('change', function() {
+        const intervalGroup = document.getElementById('notify_interval_group');
+        intervalGroup.style.display = (this.value === '1') ? 'block' : 'none';
+        
+        // Add validation requirement when visible
+        document.getElementById('notify_interval').required = (this.value === '1');
+    });
+    
+    // Initialize on load
+    const modeSelect = document.getElementById('notification_mode');
+    if (modeSelect) {
+        modeSelect.dispatchEvent(new Event('change'));
+    }
 });
 </script>
+
 {% endblock %}

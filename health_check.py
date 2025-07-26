@@ -1,6 +1,5 @@
 import json
 import paramiko
-import wmi
 from app import create_app, db
 from app.models import Server, HealthCheck
 
@@ -12,7 +11,7 @@ def load_config():
     with open('appsettings.json') as f:
         return json.load(f).get("default", {})
     
-# function to check linux storage 
+# # function to check linux storage 
 def check_linux_storage(ip, username, password):
     try:
         ssh = paramiko.SSHClient()
@@ -31,31 +30,49 @@ def check_linux_storage(ip, username, password):
 
 # function to check windows storage 
 def check_windows_storage(ip, username, password):
-    """Connects to a remote Windows machine via WMI and checks storage usage of C: drive.
-    Args:
-        ip (str): IP address of the target machine.
-        username (str): Username (can be in 'ip\\user' or 'domain\\user' format).
-        password (str): Password for the user.
-    Returns:
-        int: Percentage of used space on C: drive, or None if connection fails."""
     try:
-            conn = wmi.WMI(computer=ip, user=username, password=password)
-            for disk in conn.Win32_LogicalDisk(DriveType=3):  # DriveType=3 = local disk
-                if disk.DeviceID == "C:":
-                    total_gb = int(disk.Size) // (1024**3)
-                    free_gb = int(disk.FreeSpace) // (1024**3)
-                    
-                    if total_gb == 0:
-                        print(f"[WARN] Total size is 0 on {ip}")
-                        return None
-                    
-                    used_percent = int((total_gb - free_gb) * 100 / total_gb)
-                    return used_percent
-    except Exception as e:
-            print(f"[ERROR] Could not connect to {ip}: {e}")
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        ssh.connect(ip, username=username, password=password, timeout=10)
+        command = "df -h /mnt/c | awk 'NR==2 {print $5}'"
+        stdin, stdout, stderr = ssh.exec_command(command)
+        output = stdout.read().decode().strip()
+        ssh.close()
+        if output is None:
             return None
+        return int(output.strip('%'))
 
-# health check & update in DB
+    except Exception as e:
+        print(f"[ERROR] Windows Storage check failed for {ip}: {e}")
+        return "Error"
+    
+# # function to check windows storage 
+# def check_windows_storage(ip, username, password):
+#     """Connects to a remote Windows machine via WMI and checks storage usage of C: drive.
+#     Args:
+#         ip (str): IP address of the target machine.
+#         username (str): Username (can be in 'ip\\user' or 'domain\\user' format).
+#         password (str): Password for the user.
+#     Returns:
+#         int: Percentage of used space on C: drive, or None if connection fails."""
+#     try:
+#             conn = wmi.WMI(computer=ip, user=username, password=password)
+#             for disk in conn.Win32_LogicalDisk(DriveType=3):  # DriveType=3 = local disk
+#                 if disk.DeviceID == "C:":
+#                     total_gb = int(disk.Size) // (1024**3)
+#                     free_gb = int(disk.FreeSpace) // (1024**3)
+                    
+#                     if total_gb == 0:
+#                         print(f"[WARN] Total size is 0 on {ip}")
+#                         return None
+                    
+#                     used_percent = int((total_gb - free_gb) * 100 / total_gb)
+#                     return used_percent
+#     except Exception as e:
+#             print(f"[ERROR] Could not connect to {ip}: {e}")
+#             return None
+
+# # health check & update in DB
 def run_health_check():
     config = load_config()
     if not config.get("storage"):
@@ -97,7 +114,7 @@ def run_health_check():
                 print(f"[DB ERROR] Failed to update storage for {server.name}: {e}")
         else:
             print(f"[SKIP] Storage info for {server.name} is not numeric/error value: {storage_info}")
-
+# call main function
 if __name__ == "__main__":
     run_health_check()
 

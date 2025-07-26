@@ -319,6 +319,15 @@ input:checked + .slider:before {
   transform: translateX(20px);
 }
 
+.btn-hardware {
+    background-color: #28a745;  /* Custom green */
+    color: white;
+    border: none;
+}
+.btn-hardware:hover {
+    background-color: #218838;  /* Darker on hover */
+}
+
 
 /* New code */
 </style>
@@ -339,9 +348,12 @@ input:checked + .slider:before {
         <h1 class="mb-0 d-flex align-items-center me-4">
             <i class="fas fa-server me-2"></i> Server Management
         </h1>
-        <a href="{{ url_for('main.db_scripts') }}" class="btn btn-primary btn-lg">
+        <a href="{{ url_for('main.db_scripts') }}" class="btn btn-hardware btn-lg">
             <i class="fas fa-database me-2"></i> DB Scripts
         </a>
+<a href="{{ url_for('main.hardware_estimator') }}" class="btn btn-hardware btn-lg ms-2">
+    <i class="fas fa-microchip me-2"></i> Hardware Estimator
+</a>
     </div>
     <div class="fw-bold" style="font-size: 1.1rem; color: white;">
         Overall Health:
@@ -436,25 +448,32 @@ input:checked + .slider:before {
                         <i class="fas fa-tag me-1"></i>{{ server.name or 'Unnamed Machine' }}
                     </h5>
     <!-- {# STORAGE BADGE/ICON BASED ON USAGE #} -->
+<!-- {# STORAGE BADGE/ICON BASED ON USAGE AND SERVER STATUS #} -->
 {% set storage_value = health_map[server.id].storage if server.id in health_map else None %}
-{% if storage_value is not none %}
-    {% if storage_value > 80 %}
-        <span class="badge bg-danger">
-            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
-        </span>
-    {% elif storage_value > 50 %}
-        <span class="badge bg-warning text-dark">
-            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
-        </span>
+{% if server.status == 'Down' %}
+    <span class="badge bg-secondary">
+        <i class="fas fa-hdd"></i> Storage: {{ storage_value if storage_value is not none else 'N/A' }}
+    </span>
+{% else %}
+    {% if storage_value is not none %}
+        {% if storage_value > 80 %}
+            <span class="badge bg-danger">
+                <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+            </span>
+        {% elif storage_value > 50 %}
+            <span class="badge bg-warning text-dark">
+                <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+            </span>
+        {% else %}
+            <span class="badge bg-success">
+                <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+            </span>
+        {% endif %}
     {% else %}
-        <span class="badge bg-success">
-            <i class="fas fa-hdd"></i> Storage: {{ storage_value }}%
+        <span class="badge bg-secondary">
+            <i class="fas fa-hdd"></i> Storage: N/A
         </span>
     {% endif %}
-{% else %}
-    <span class="badge bg-secondary">
-        <i class="fas fa-hdd"></i> Storage: N/A
-    </span>
 {% endif %}
 
                     <span class="badge status-badge 
@@ -529,28 +548,7 @@ input:checked + .slider:before {
                         </button>
 
                     <!-- Snooze button with alarm icon -->
-                    {% set health = health_map[server.id] if server.id in health_map else None %}
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; margin-top: 5px;">
-                        
-                        <!-- Alarm Icon -->
-                        <i class="fa-solid fa-bell{{ '-slash' if health and health.ack else '' }}"
-                        style="font-size: 20px; color: {{ 'gray' if health and health.ack else 'red' }};"
-                        title="{{ 'Snoozed' if health and health.ack else 'Active Alerts' }}">
-                        </i>
-                        
-                        <!-- Toggle Switch + Label -->
-                        <form method="POST" action="{{ url_for('main.toggle_snooze', server_id=server.id) }}" style="display: flex; align-items: center; gap: 8px;">
-                            <label class="switch" style="margin: 0;">
-                                <input type="checkbox" name="ack" value="true" onchange="this.form.submit()" {{ 'checked' if health and health.ack }}>
-                                <span class="slider round"></span>
-                            </label>
-                            <span class="toggle-label" style="font-size: 12px; font-weight: bold;">
-                                {{ 'Snoozed' if health and health.ack else 'Active' }}
-                            </span>
-                        </form>
-                    </div>
-
-                        <!-- edit button -->
+               <!-- edit button -->
                         <div class="action-buttons">
                             <a href="{{ url_for('main.edit_server', id=server.id) }}" class="btn btn-sm btn-outline-warning">
                                 <i class="fas fa-edit"></i>

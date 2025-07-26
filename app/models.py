@@ -14,7 +14,9 @@ class Server(db.Model):
     email_id_prim = db.Column(db.String(240))
     purpose = db.Column(db.String(240))  # This acts as 'service' (e.g., 'RM', 'Jenkins')
     status = db.Column(db.String(20)) # 'Up' or 'Down'
-    machine_psw = db.Column(db.String(20))    
+    machine_psw = db.Column(db.String(20))   
+    notification_mode =  db.Column(db.Integer)
+    notify_interval =  db.Column(db.Integer)
 
     # Optional relationship to health_check
     health = db.relationship('HealthCheck', backref='server', uselist=False, cascade="all, delete-orphan")
@@ -30,5 +32,5 @@ class HealthCheck(db.Model):
     last_checked = db.Column(db.DateTime)
     last_alert_sent = db.Column(db.DateTime, nullable=True)
     healthcheck = db.Column(db.String(100))
-    ack = db.Column(db.Boolean, default=False)
+    alarm_status = db.Column(db.Boolean, default=False)
 
